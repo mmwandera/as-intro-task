@@ -1,0 +1,47 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtualenv
+.venv/
+env/
+venv/
+
+# Pipenv
+Pipfile.lock
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and debug files
+*.log
+*.out
+*.err
+
+# Unit test cache
+.pytest_cache/
+.coverage
+htmlcov/
+.cache/
+
+# Certs (security)
+certs/*.pem
+certs/*.key
+
+# Systemd-generated or install artifacts
+*.service
+
+# OS crap
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data files
+benchmarks/data/
+benchmarks/results.csv
