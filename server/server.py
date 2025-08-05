@@ -1,17 +1,25 @@
 import socket
 import threading
 from typing import Tuple
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from server.config import extract_linuxpath
 
 HOST = '0.0.0.0'
 PORT = 44445
 MAX_PAYLOAD_SIZE = 1024
 
+# Read linuxpath from config
+try:
+    LINUX_PATH = extract_linuxpath()
+    print(f"[CONFIG] linuxpath = {LINUX_PATH}")
+except Exception as e:
+    print(f"[ERROR] Failed to load linuxpath: {e}")
+    exit(1)
+
 
 def receive_query(conn: socket.socket) -> str:
-    """
-    Receives up to MAX_PAYLOAD_SIZE bytes from the client,
-    strips null terminators, and decodes to UTF-8.
-    """
     raw = conn.recv(MAX_PAYLOAD_SIZE)
     if not raw:
         return ""
@@ -20,13 +28,12 @@ def receive_query(conn: socket.socket) -> str:
 
 
 def handle_client(conn: socket.socket, addr: Tuple[str, int]) -> None:
-    """Handles a single TCP client connection."""
     print(f"[+] Connection from {addr}")
     try:
         query = receive_query(conn)
         print(f"[{addr}] Received: {query}")
 
-        # Placeholder for future logic
+        # Placeholder logic
         response = "STRING EXISTS\n"
         conn.sendall(response.encode('utf-8'))
 
@@ -38,7 +45,6 @@ def handle_client(conn: socket.socket, addr: Tuple[str, int]) -> None:
 
 
 def start_server() -> None:
-    """Starts a multithreaded TCP server."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((HOST, PORT))
