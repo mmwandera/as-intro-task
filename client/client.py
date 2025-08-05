@@ -7,4 +7,7 @@ def send_query(query: str):
         print("Server response:", response.decode().strip())
 
 if __name__ == "__main__":
-    send_query("test_string")
+    send_query("foobar")       # Should print STRING EXISTS
+    send_query("foo")          # Should print STRING NOT FOUND
+    send_query("123456")       # Should print STRING EXISTS
+    send_query("1234567")      # Should print STRING NOT FOUND
