@@ -1,8 +1,10 @@
 import socket
 import threading
+import time
 from typing import Tuple
 import sys
 import os
+from datetime import datetime
 
 # Fix imports for direct script execution
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -24,7 +26,7 @@ except Exception as e:
     print(f"[ERROR] Failed to load config: {e}")
     exit(1)
 
-# Cache lines once if REREAD_ON_QUERY is False
+# Cache lines if needed
 FILE_LINES = []
 if not REREAD_ON_QUERY:
     try:
@@ -36,43 +38,46 @@ if not REREAD_ON_QUERY:
 
 
 def receive_query(conn: socket.socket) -> str:
-    """
-    Receives up to 1024 bytes from client.
-    Strips all null bytes and decodes cleanly into a UTF-8 string.
-    """
-    try:
-        raw = conn.recv(1024)  # Hard limit
-        if not raw:
-            return ""
-        cleaned = raw.replace(b'\x00', b'').decode('utf-8', errors='ignore').strip()
-        return cleaned
-    except Exception as e:
-        print(f"[!] Error reading query: {e}")
+    raw = conn.recv(MAX_PAYLOAD_SIZE)
+    if not raw:
         return ""
+    cleaned = raw.replace(b'\x00', b'').decode('utf-8', errors='ignore').strip()
+    return cleaned
 
 
 def handle_client(conn: socket.socket, addr: Tuple[str, int]) -> None:
-    """
-    Handles one client: reads query, checks file, sends result, closes connection.
-    """
-    print(f"[+] Connection from {addr}")
+    client_ip = addr[0]
+    print(f"[+] Connection from {client_ip}")
     try:
         query = receive_query(conn)
-        print(f"[{addr}] Received: {query}")
+        print(f"[{client_ip}] Received: {query}")
+
+        start_time = time.perf_counter()
 
         if REREAD_ON_QUERY:
             found = search_in_file(LINUX_PATH, query)
         else:
             found = search_in_memory(FILE_LINES, query)
 
+        end_time = time.perf_counter()
+        exec_time_ms = (end_time - start_time) * 1000
+
+        timestamp = datetime.now().isoformat(timespec="seconds")
+        debug_info = (
+            f'DEBUG: query="{query}", ip="{client_ip}", '
+            f'time={exec_time_ms:.2f}ms, ts={timestamp}'
+        )
+
         response = "STRING EXISTS\n" if found else "STRING NOT FOUND\n"
+        response += debug_info + "\n"
+
         conn.sendall(response.encode('utf-8'))
 
     except Exception as e:
-        print(f"[!] Error handling {addr}: {e}")
+        print(f"[!] Error handling {client_ip}: {e}")
     finally:
         conn.close()
-        print(f"[-] Connection from {addr} closed")
+        print(f"[-] Connection from {client_ip} closed")
 
 
 def start_server() -> None:
